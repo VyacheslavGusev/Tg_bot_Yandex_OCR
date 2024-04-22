@@ -1,6 +1,7 @@
 import re
 import json
 import pandas as pd
+from Levenshtein import distance as levenshtein_distance
 
 def read_json(result):
     proc_list = []
@@ -57,7 +58,8 @@ def merge_texts(sublist, field_list):
         found = False
         merged_text = sublist[i]['text'] + ' ' + sublist[i + 1]['text']
         for el in field_list:
-            if normalize_string(merged_text) in normalize_string(el):
+            if normalize_string(merged_text) in normalize_string(el) or\
+                levenshtein_distance(normalize_string(merged_text),normalize_string(el))<=1:
                 new_dict = {
                     'text': merged_text,
                     'x_coord': sublist[i + 1]['x_coord'],
@@ -90,7 +92,8 @@ def process_text_fields(spisok, field_list):
     ext_list = {}
     for item in spisok:
         for field in field_list:
-            if normalize_string(item['text']) == normalize_string(field) and len(item['text']) >= 3:
+            if levenshtein_distance(normalize_string(item['text']),normalize_string(field))<=1 or\
+                normalize_string(item['text']) == normalize_string(field) and len(item['text']) >= 3:
                 if field in ext_list:
                     continue
                 else:

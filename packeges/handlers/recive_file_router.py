@@ -34,6 +34,8 @@ async def download_photo(message: Message, bot: Bot):
     doc_output = FSInputFile(f"tmp/{message.photo[-1].file_id}/output.xlsx")
     await message.answer_document(doc_output, 
                                   caption="Результат распознания")
+    os.remove(f"tmp/{message.photo[-1].file_id}.jpg")
+    shutil.rmtree(f'tmp/{message.photo[-1].file_id}')
 
 @router.message(F.document)
 async def download_document(message: Message, bot: Bot):
