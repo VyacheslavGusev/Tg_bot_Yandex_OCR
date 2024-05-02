@@ -10,7 +10,6 @@ async def main():
     dp = Dispatcher()
     dp.include_routers(start_router.router,
                        recive_file_router.router
-
     )
 
     await bot.delete_webhook(drop_pending_updates=True)

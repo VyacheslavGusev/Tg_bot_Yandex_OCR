@@ -1,7 +1,11 @@
 import re
+import os
+import cv2
 import json
 import pandas as pd
 from Levenshtein import distance as levenshtein_distance
+from boxdetect import config
+from boxdetect.pipelines import get_checkboxes
 
 def read_json(result):
     proc_list = []
@@ -59,7 +63,7 @@ def merge_texts(sublist, field_list):
         merged_text = sublist[i]['text'] + ' ' + sublist[i + 1]['text']
         for el in field_list:
             if normalize_string(merged_text) in normalize_string(el) or\
-                levenshtein_distance(normalize_string(merged_text),normalize_string(el))<=1:
+                levenshtein_distance(normalize_string(merged_text), normalize_string(el)) <=1:
                 new_dict = {
                     'text': merged_text,
                     'x_coord': sublist[i + 1]['x_coord'],
@@ -145,6 +149,128 @@ def process_extract_text(text_fields, extracted_data):
                 proc_string += item['text']+' ' 
         extracted_data[key]= proc_string
 
+# Функция поиска чек боксов и разделения их на заполненные и незаполненные
+def checkbox_detect(image_path):
+    image = cv2.imread(image_path)
+    height, width = image.shape[:2]
+
+    cfg = config.PipelinesConfig()
+
+    cfg.width_range = (30,87)
+    cfg.height_range = (30,87)
+
+    cfg.scaling_factors = [1.3]
+
+    cfg.wh_ratio_range = (0.8, 1.2)
+
+
+    cfg.group_size_range = (1, 1)
+
+    cfg.dilation_iterations = 0
+
+    checkboxes = get_checkboxes(
+        image_path, cfg=cfg, px_threshold=0.08, plot=False, verbose=False)
+    
+    # определение конца сегмента для распознанного текста путем сравнения координат
+    # чек боксов, стоящих на одной линии
+    checkbox_coord = []
+
+    for el in checkboxes:
+        found = False
+        for i in checkboxes:
+            if el[0] != i[0]:
+                if abs(int(el[0][1])/int(height)*100-int(i[0][1])/int(height)*100)<=1 and\
+                int(el[0][0]) < int(i[0][0]):
+                    coord = el[0] +(int(i[0][0]), int(height))
+                    el = np.array([coord, el[1], el[2]], dtype=object)
+                    checkbox_coord.append(el)
+                    found = True
+                    break
+        if not found:
+            coord = el[0] +(int(width), int(height))
+            el = np.array([coord, el[1], el[2]], dtype=object)
+            checkbox_coord.append(el)
+                    
+    # Разделение списков чек боксов на заполненные и незаполненные
+    boxes = []
+    checked_box = []
+
+    for checkbox in checkbox_coord:
+        boxes.append(checkbox[0])
+        
+    found = False
+    for checkbox in checkbox_coord:
+        if checkbox[1]:
+            checked_box.append(checkbox[0])
+            found = True
+    if not found:
+       checked_box.append((0, 0, 0, 0, 0, 0))
+        
+    return boxes, checked_box
+
+# Функция разделения списков заполненных чекбоксов на несколько
+# в случае если на листе несколько анкет
+def split_checkbox_list(data, checkbox_list, keyword):
+    # Создаем список ключевых слов с координатами
+    keywords = []
+
+    for item in data:
+        if item['text'].lower().strip() == keyword.lower().strip():
+            keywords.append(item)
+
+    # Проверяем, есть ли ключевые слова
+    if not keywords:
+        return []
+
+    # Сортируем ключевые слова по координате Y начала
+    sorted_keywords = sorted(keywords, key=lambda k: int(k['y_coord'][0]))
+
+    # Если ключевое слово одно, создаем один диапазон до конца страницы
+    if len(sorted_keywords) == 1:
+        ranges = [(int(sorted_keywords[0]['y_coord'][1]), None)]
+    else:
+        # Получаем диапазоны между ключевыми словами
+        ranges = [(int(sorted_keywords[i]['y_coord'][1]), int(sorted_keywords[i+1]['y_coord'][0]))
+                  for i in range(len(sorted_keywords) - 1)]
+        # Добавляем диапазон для последнего ключевого слова
+        last_keyword = sorted_keywords[-1]
+        ranges.append((int(last_keyword['y_coord'][1]), None))
+
+    # Разделяем чекбоксы по диапазонам
+    split_chbox_lists = [[] for _ in range(len(ranges))]
+    
+    for checkbox in checkbox_list:
+        y_coord = checkbox[1]  # Y координата верхнего левого угла чекбокса
+        
+        for i, (start, end) in enumerate(ranges):
+            if end is None:
+                # Если это последний диапазон
+                if y_coord > start:
+                    split_chbox_lists[i].append(checkbox)
+            else:
+                if start < y_coord <= end:
+                    split_chbox_lists[i].append(checkbox)
+                    found = True
+                    break
+            
+
+    return split_chbox_lists
+
+# Функция заполнения слов по отмеченным чек-боксам
+def check_box_extract_text(text_fields, checked_box):
+    interest = []
+    for el in checked_box:
+        proc_string = ''
+        for item in text_fields:
+            # Прямое сравнение координат без индексации строки
+            if abs(el[1]/el[5]*100 - int(item['y_coord'][0])/int(item['height'])*100) <= 1.2 and\
+               el[0] < int(item['x_coord'][1]) < el[4]:
+                proc_string += item['text'] + ' '
+        # Добавляем proc_string в interest, если он не пустой
+        if proc_string:
+            interest.append(proc_string.rstrip(' '))
+    return interest
+
 def output_res(proc_list, file_id):
     res_list = []
     field_list = [
@@ -170,6 +296,14 @@ def output_res(proc_list, file_id):
         'Курс\класс'
     ]
 
+    boxes_list = []
+    checkbox_list = []
+    for img in os.listdir(f'tmp/{file_id}/rotated'):
+        image_path = os.path.join(f'tmp/{file_id}/rotated', img)  
+        boxes, checked_box = checkbox_detect(image_path)
+        boxes_list.append(boxes)
+        checkbox_list.append(checked_box)
+
     sublist = []
     for el in proc_list:
         split_lists = split_on_keyword(el, 'анкета')
@@ -181,7 +315,20 @@ def output_res(proc_list, file_id):
         extracted_data, filtered_spisok = process_text_fields(new_sublist, field_list)
         process_extract_text(filtered_spisok, extracted_data)
         res_list.append(extracted_data)
+
+    splited_checkboxes = []
+    for el, i in zip(proc_list, checkbox_list):
+        split_cb = split_checkbox_list(el, i, 'анкета')
+        for item in split_cb:
+            splited_checkboxes.append(item)
+
+    interest_list =[]
+    for res, cb in zip(sublist, splited_checkboxes):
+        interest_list.append(check_box_extract_text(res, cb))
     
-        df = pd.DataFrame(res_list)
-        output = df.to_excel(f'tmp/{file_id}/output.xlsx', index=False)
+    df = pd.DataFrame(res_list)
+    df = df.map(lambda x: x.replace(' ', '') if isinstance(x, str) else x)
+    df.dropna(how='all', inplace=True)
+    df['интерес'] = interest_list
+    output = df.to_excel(f'tmp/{file_id}/output.xlsx', index=False)
     return output
