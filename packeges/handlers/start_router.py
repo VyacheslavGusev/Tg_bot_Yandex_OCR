@@ -10,5 +10,5 @@ async def cmd_start(message: Message, state:FSMContext):
     await state.clear()
 
     await message.answer(
-        "Привет! Отправь мне PDF или изображение с текстом для распознавания."
+        "Привет!  Я бот распознования анкет. Давай заполним обязательные поля"
     )

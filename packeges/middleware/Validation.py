@@ -3,6 +3,7 @@ import os
 import cv2
 import json
 import pandas as pd
+import numpy as np
 from Levenshtein import distance as levenshtein_distance
 from boxdetect import config
 from boxdetect.pipelines import get_checkboxes
@@ -156,8 +157,8 @@ def checkbox_detect(image_path):
 
     cfg = config.PipelinesConfig()
 
-    cfg.width_range = (30,87)
-    cfg.height_range = (30,87)
+    cfg.width_range = (25,87)
+    cfg.height_range = (25,87)
 
     cfg.scaling_factors = [1.3]
 
@@ -169,7 +170,7 @@ def checkbox_detect(image_path):
     cfg.dilation_iterations = 0
 
     checkboxes = get_checkboxes(
-        image_path, cfg=cfg, px_threshold=0.08, plot=False, verbose=False)
+        image_path, cfg=cfg, px_threshold=0.2, plot=False, verbose=False)
     
     # определение конца сегмента для распознанного текста путем сравнения координат
     # чек боксов, стоящих на одной линии
@@ -204,7 +205,7 @@ def checkbox_detect(image_path):
             checked_box.append(checkbox[0])
             found = True
     if not found:
-       checked_box.append((0, 0, 0, 0, 0, 0))
+       checked_box.append((1,1,1,1,1,1))
         
     return boxes, checked_box
 
@@ -325,10 +326,13 @@ def output_res(proc_list, file_id):
     interest_list =[]
     for res, cb in zip(sublist, splited_checkboxes):
         interest_list.append(check_box_extract_text(res, cb))
+
+    return res_list, interest_list
     
-    df = pd.DataFrame(res_list)
-    df = df.map(lambda x: x.replace(' ', '') if isinstance(x, str) else x)
-    df.dropna(how='all', inplace=True)
-    df['интерес'] = interest_list
-    output = df.to_excel(f'tmp/{file_id}/output.xlsx', index=False)
-    return output
+    #df = pd.DataFrame(res_list)
+    #df = df.map(lambda x: x.replace(' ', '') if isinstance(x, str) else x)
+    #interest_strings = [', '.join(item) if item else '' for item in interest_list]
+    #df['интерес'] = interest_strings
+    #df.dropna(how='all', inplace=True)
+    #output = df.to_excel(f'tmp/{file_id}/output.xlsx', index=False)
+    #return output

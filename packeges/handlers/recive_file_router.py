@@ -2,7 +2,7 @@ import os
 import shutil
 from aiogram import Router, Bot, F
 from aiogram.types import Message, FSInputFile
-from packeges.middleware import Validation, YandexAPI, Proc_image
+from packeges.middleware import Validation, YandexAPI, Proc_image, Result
 
 
 
@@ -55,7 +55,8 @@ async def download_document(message: Message, bot: Bot):
 
     result = YandexAPI.recognition_text(message.document.file_id)
     proc_data = Validation.read_json(result)
-    Validation.output_res(proc_data, message.document.file_id )
+    res_list, interest_list = Validation.output_res(proc_data, message.document.file_id )
+    Result.output_res(res_list, interest_list, message.document.file_id)
     
     doc_output = FSInputFile(f"tmp/{message.document.file_id}/output.xlsx")
     await message.answer_document(doc_output, 
