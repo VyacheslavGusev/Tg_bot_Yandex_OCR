@@ -2,7 +2,6 @@ import re
 import os
 import cv2
 import json
-import pandas as pd
 import numpy as np
 from Levenshtein import distance as levenshtein_distance
 from boxdetect import config
@@ -328,11 +327,3 @@ def output_res(proc_list, file_id):
         interest_list.append(check_box_extract_text(res, cb))
 
     return res_list, interest_list
-    
-    #df = pd.DataFrame(res_list)
-    #df = df.map(lambda x: x.replace(' ', '') if isinstance(x, str) else x)
-    #interest_strings = [', '.join(item) if item else '' for item in interest_list]
-    #df['интерес'] = interest_strings
-    #df.dropna(how='all', inplace=True)
-    #output = df.to_excel(f'tmp/{file_id}/output.xlsx', index=False)
-    #return output

@@ -16,7 +16,8 @@ def get_phone_number(entry):
     else:
         return ''
     
-def output_res(res_list, interest_list, file_id):
+def output_res(res_list, interest_list, file_id, id_request, compaign, ed_inst,\
+                      name_ed_inst, date, city, address, responsible):
     df = pd.DataFrame(res_list)
     df_res = pd.DataFrame()
     #df = df.map(lambda x: x.replace(' ', '') if isinstance(x, str) else x)
@@ -27,12 +28,23 @@ def output_res(res_list, interest_list, file_id):
     df_res['Мобильный телефон'] = [get_phone_number(item) for item in res_list]
     df_res['Рабочий телефон'] = df['Телефон родителя']
     df_res['Частный e-mail'] = df['E-mail']
+    df_res['Уровень образования (Класс/курс)'] = df['Курс\класс']
     try:
         df_res['ФИО отца'] = df['ФИО родителя']
     except KeyError:
         pass
     df_res['Телефон отца'] = df['Телефон родителя']
     df_res['Комментарий'] = interest_strings
+    df_res['ID заявки в SD'] = id_request
+    df_res['Кампания (utm_campaign)'] = compaign
+    df_res['Тип учебного заведения'] = ed_inst
+    df_res['учебное заведение'] = name_ed_inst
+    df_res['Дата анкетирования'] = date
+    df_res['Город'] = city
+    df_res['Город (IP)'] = city
+    df_res['Адрес'] = address
+    df_res['Ответственный'] = responsible
+    df_res['Визуал'] = responsible
     df_res['Источник'] = '8'
     df_res['Дополнительно об источнике'] = 'Университет'
     df_res['Тип анкетирования'] = 'Анкета / Questionnaire'
