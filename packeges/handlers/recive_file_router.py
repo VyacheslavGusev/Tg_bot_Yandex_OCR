@@ -85,6 +85,9 @@ async def download_document(message: Message, state: FSMContext, bot: Bot):
     await message.answer_document(doc_output, 
                                   caption="Результат распознания")
     
+    result_output = FSInputFile(f"tmp/{message.document.file_id}/result.xlsx")
+    await message.answer_document(result_output, caption='Результат обработки')
+    
     os.remove(f"tmp/{message.document.file_id}.pdf")
     shutil.rmtree(f"tmp/{message.document.file_id}")                                
 

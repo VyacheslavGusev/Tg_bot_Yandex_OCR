@@ -145,7 +145,7 @@ def process_extract_text(text_fields, extracted_data):
         proc_string = ''
         for item in text_fields:
             if abs(int(item['y_coord'][1])/int(item['height'])*100 - int(extracted_data[key]['y_coord'][1])/int(extracted_data[key]['height'])*100) <=1.2 and\
-            int(extracted_data[key]['x_coord'][2]) < int(item['x_coord'][1]) < int(extracted_data[key]['end_segment'])-5:
+            int(extracted_data[key]['x_coord'][2]) <= int(item['x_coord'][1]) < int(extracted_data[key]['end_segment'])-5:
                 proc_string += item['text']+' ' 
         extracted_data[key]= proc_string
 
