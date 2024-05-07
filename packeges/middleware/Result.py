@@ -49,7 +49,7 @@ def output_res(res_list, interest_list, file_id, id_request, compaign, ed_inst,\
     df_res['Рабочий телефон'] = df['Телефон родителя']
     df_res['Рабочий телефон'] = df['Телефон родителя'].apply(validate_phone).map(lambda x: x.replace(' ', '') if isinstance(x, str) else x)
     df_res['Частный e-mail'] = df['E-mail'].map(lambda x: x.replace(' ', '') if isinstance(x, str) else x)
-    df_res['Уровень образования (Класс/курс)'] = df['Курс\\класс']
+    df_res['Уровень образования (Класс/курс)'] = df['Курс/класс']
     try:
         df_res['ФИО отца'] = df['ФИО родителя']
     except KeyError:
