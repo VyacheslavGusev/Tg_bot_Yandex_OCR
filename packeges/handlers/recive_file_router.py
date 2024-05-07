@@ -10,7 +10,10 @@ from packeges.middleware import Validation, YandexAPI, Proc_image, Result
 if not os.path.exists('tmp'):
     os.makedirs('tmp')
 
+
 router = Router()
+
+#todo переделать получение картинок под Агента 
 @router.message(F.photo)
 async def download_photo(message: Message, state: FSMContext, bot: Bot):
     await bot.get_file(
@@ -70,7 +73,7 @@ async def download_document(message: Message, state: FSMContext, bot: Bot):
 
     file_name = os.path.splitext(os.path.basename(file.file_path))[0]
     file_extension = os.path.splitext(os.path.basename(file.file_path))[1]
-    file_path = f'/home/vyacheslav/Documents/GitHub/Tg_bot_OCR/bot_files/7042345812:AAGDBQzNpghb5u5eFlmKvKGBtTcapCTzkg0/documents/{file_name}{file_extension}'
+    file_path = f'/home/vyacheslav/Documents/GitHub/Tg_bot_OCR/bot_files/{bot.token}/documents/{file_name}{file_extension}'
     output_images = f'tmp/{message.document.file_id}'
     Proc_image.file_to_png(file_path, output_images)
     
@@ -92,7 +95,7 @@ async def download_document(message: Message, state: FSMContext, bot: Bot):
     result_output = FSInputFile(f"tmp/{message.document.file_id}/result.xlsx")
     await message.answer_document(result_output, caption='Результат обработки')
     
-    os.remove(f"tmp/{message.document.file_id}.pdf")
+    os.remove(f'/home/vyacheslav/Documents/GitHub/Tg_bot_OCR/bot_files/{bot.token}/documents/{file_name}{file_extension}')
     shutil.rmtree(f"tmp/{message.document.file_id}")                                
 
     
