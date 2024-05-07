@@ -13,7 +13,7 @@ if not os.path.exists('tmp'):
 router = Router()
 @router.message(F.photo)
 async def download_photo(message: Message, state: FSMContext, bot: Bot):
-    await bot.download(
+    await bot.get_file(
         message.photo[-1],
         destination=f"tmp/{message.photo[-1].file_id}.jpg")
     
@@ -51,8 +51,7 @@ async def download_photo(message: Message, state: FSMContext, bot: Bot):
 
 @router.message(F.document)
 async def download_document(message: Message, state: FSMContext, bot: Bot): 
-    await bot.download(message.document,
-        destination=f"tmp/{message.document.file_id}.pdf")
+    file = await bot.get_file(message.document.file_id)
     
     await message.answer("Файл получен, отправлен на распознание, подождите немного")
 
@@ -66,7 +65,12 @@ async def download_document(message: Message, state: FSMContext, bot: Bot):
     address = data.get('address')
     responsible = data.get('responsible')
 
-    file_path = f"tmp/{message.document.file_id}.pdf"
+    
+    
+
+    file_name = os.path.splitext(os.path.basename(file.file_path))[0]
+    file_extension = os.path.splitext(os.path.basename(file.file_path))[1]
+    file_path = f'/home/vyacheslav/Documents/GitHub/Tg_bot_OCR/bot_files/7042345812:AAGDBQzNpghb5u5eFlmKvKGBtTcapCTzkg0/documents/{file_name}{file_extension}'
     output_images = f'tmp/{message.document.file_id}'
     Proc_image.file_to_png(file_path, output_images)
     
