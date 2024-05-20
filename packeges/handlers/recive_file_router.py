@@ -13,7 +13,7 @@ if not os.path.exists('tmp'):
 
 router = Router()
 
-#todo переделать получение картинок под Агента 
+#TODO переделать получение картинок под Агента 
 @router.message(F.photo)
 async def download_photo(message: Message, state: FSMContext, bot: Bot):
     await bot.get_file(

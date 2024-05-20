@@ -2,12 +2,7 @@ import re
 import pandas as pd
 from packeges.middleware import Ai_block
 
-def create_lead_title(entry):
-    if 'ФИО' in entry:
-        return entry['ФИО'].strip()
-    else:
-        parts = [entry.get(part, '').strip() for part in ['Фамилия', 'Имя', 'Отчество']]
-        return ' '.join(part for part in parts if part)
+
 
 def create_lead_title(entry):
     if 'ФИО' in entry:  
